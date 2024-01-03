@@ -17,7 +17,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="icon" href="images/favicon.ico" type="image/ico" />
 
-    <title>Sistem Pendukung Keputusan | Simple Addive Weigthing</title>
+    <title>Management Saksi</title>
 
     <!-- Bootstrap -->
     <link href="<?php echo base_url();?>Assets/vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
