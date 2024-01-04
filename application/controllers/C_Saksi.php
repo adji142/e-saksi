@@ -26,8 +26,8 @@
 					a.TanggalLahir,
 					a.NoKTAB,
 					a.Alamat,
-					d.dis_name		as Kecamatan,
-					e.subdis_name as Kelurahan,
+					COALESCE(d.dis_name,'')		as Kecamatan,
+					COALESCE(e.subdis_name,'') as Kelurahan,
 					f.NamaTPS,
 					f.AlamatTPS,
 					a.NoTlp,
@@ -101,7 +101,7 @@
 
 			$oFindNIK = $this->ModelsExecuteMaster->FindData(array('NIK'=>$NIK),$this->table);
 
-			if ($oFindNIK->num_rows() > 0) {
+			if ($oFindNIK->num_rows() > 0 && $formtype == "add") {
 				$data['success'] = false;
 				$data['message'] = 'Nik Sudah dipakai oleh : ' . $oFindNIK->row()->FullName;
 				goto jump;
@@ -185,6 +185,104 @@
 			$wherevalue = $this->input->post('wherevalue');
 
 			$rs = $this->ModelsExecuteMaster->FindData(array($wherefield=> $wherevalue), $demografilevel);
+
+			if ($rs->num_rows() > 0) {
+				$data['success'] = true;
+				$data['data'] = $rs->result();
+			}
+			jump:
+			echo json_encode($data);
+		}
+
+		public function LookupProvinsi()
+		{
+			$data = array('success' => false ,'message'=>array(),'data'=>array());
+
+			$Kriteria = $this->input->post('Kriteria');
+
+			$SQL = "
+				SELECT 
+					prov_id		AS ID,
+					prov_name 	AS Title
+				FROM dem_provinsi where prov_name like '%".$Kriteria."%'
+			";
+
+			$rs = $this->db->query($SQL);
+
+			if ($rs->num_rows() > 0) {
+				$data['success'] = true;
+				$data['data'] = $rs->result();
+			}
+			jump:
+			echo json_encode($data);
+		}
+
+		public function LookupKota()
+		{
+			$data = array('success' => false ,'message'=>array(),'data'=>array());
+
+			$Kriteria = $this->input->post('Kriteria');
+			$prov_id = $this->input->post('prov_id');
+
+			$SQL = "
+				SELECT 
+					city_id		AS ID,
+					city_name 	AS Title
+				FROM dem_kota where city_name like '%".$Kriteria."%'
+				AND prov_id	= '".$prov_id."'
+			";
+
+			$rs = $this->db->query($SQL);
+
+			if ($rs->num_rows() > 0) {
+				$data['success'] = true;
+				$data['data'] = $rs->result();
+			}
+			jump:
+			echo json_encode($data);
+		}
+
+		public function LookupKecamatan()
+		{
+			$data = array('success' => false ,'message'=>array(),'data'=>array());
+
+			$Kriteria = $this->input->post('Kriteria');
+			$kota_id = $this->input->post('kota_id');
+
+			$SQL = "
+				SELECT 
+					dis_id		AS ID,
+					dis_name 	AS Title
+				FROM dem_kecamatan where dis_name like '%".$Kriteria."%'
+				AND kota_id = '".$kota_id."'
+			";
+
+			$rs = $this->db->query($SQL);
+
+			if ($rs->num_rows() > 0) {
+				$data['success'] = true;
+				$data['data'] = $rs->result();
+			}
+			jump:
+			echo json_encode($data);
+		}
+
+		public function LookupKelurahan()
+		{
+			$data = array('success' => false ,'message'=>array(),'data'=>array());
+
+			$Kriteria = $this->input->post('Kriteria');
+			$kec_id = $this->input->post('kec_id');
+
+			$SQL = "
+				SELECT 
+					subdis_id		AS ID,
+					subdis_name 	AS Title
+				FROM dem_kelurahan where subdis_name like '%".$Kriteria."%'
+				AND kec_id = '".$kec_id."'
+			";
+
+			$rs = $this->db->query($SQL);
 
 			if ($rs->num_rows() > 0) {
 				$data['success'] = true;

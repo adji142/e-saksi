@@ -405,44 +405,18 @@ class Auth extends CI_Controller {
 					'icon'			=> ''
 				);
 
-		$RecordOwnerID = $this->input->post('RecordOwnerID');
 		$Username = $this->input->post('username');
 		$password = $this->input->post('password');
-		$LoginDate = $this->input->post('LoginDate');
 
 		// Verifikasi Partner ID
 
-		$oPartner = $this->ModelsExecuteMaster->FindData(array('KodePartner'=>$RecordOwnerID), 'tcompany');
-
-		if ($oPartner->num_rows() == 0) {
-			$data['success'] = false;
-			$data['message'] = 'Partner Tidak Ditemukan, Silahkan Hubungi Operator';
-			goto jump;
-		}
-
-		$oUser = $this->ModelsExecuteMaster->FindData(array('username'=>$Username,'RecordOwnerID'=> $RecordOwnerID), 'users');
+		$oUser = $this->ModelsExecuteMaster->FindData(array('username'=>$Username), 'users');
 
 		if ($oUser->num_rows() == 0) {
 			$data['success'] = false;
 			$data['message'] = 'Username Tidak Ditemukan, Silahkan Hubungi Operator';
 			goto jump;
 		}
-
-		// Check Subscription
-
-		$SqlParam = "
-			SELECT * FROM tcompany where KodePartner = '".$RecordOwnerID."'
-			AND DATE_ADD(EndSubs,INTERVAL ExtraDays DAY) > now();
-		";
-
-		$oPartnerSubs = $this->db->query($SqlParam);
-
-		if ($oPartnerSubs->num_rows() == 0) {
-			$data['success'] = false;
-			$data['message'] = 'Langganan Telah Habis, Silahkan Melakukan Perpanjangan Langganan';
-			goto jump;
-		}
-		// Check Subscription
 
 		$validPWD = $this->encryption->decrypt($oUser->row()->password);
 
@@ -452,77 +426,22 @@ class Auth extends CI_Controller {
 			goto jump;
 		}
 		else{
-
-			$oSecurity = $this->ModelsExecuteMaster->FindData(array('NIK'=>$Username,'RecordOwnerID'=> $RecordOwnerID), 'tsecurity');
-
 			// var_dump($oSecurity->row());
-
-			$oLokasi = $this->ModelsExecuteMaster->FindData(array('LocationID'=>$oUser->row()->AreaUser,'RecordOwnerID'=> $RecordOwnerID), 'tshift');
 
 			$data['success'] = true;
 			$data['username'] = $oUser->row()->username;
 			$data['unique_id'] = $oUser->row()->id;
-			$data['RecordOwnerID'] = $oUser->row()->RecordOwnerID;
-			$data['NamaPartner'] = $oPartner->row()->NamaPartner;
-			$data['LocationID'] = $oUser->row()->AreaUser;
 			$data['NamaUser'] = $oUser->row()->nama;
-			$data['icon'] = $oPartner->row()->icon;
-			if ($oSecurity->num_rows() > 0) {
-				// Shift
-
-				$xLoginDate = strtotime($LoginDate);
-				$Tanggal = date("y-m-d", $xLoginDate);
-
-				$defTime = strtotime('00:00:01');
-				$Jam = strtotime(date("h:m:s", $xLoginDate));
-
-				// var_dump($Jam);
-
-				foreach ($oLokasi->result() as $key) {
-					if ($key->GantiHari == "1") {
-						$mulai = strtotime($key->MulaiBekerja);
-						$selesai = strtotime($key->SelesaiBekerja);
-
-						if ($defTime < $Jam && $Jam < $selesai ) {
-							// echo "Ganti Hari";
-							$data['Shift'] = $key->id;
-							$data['isGantiHari'] = $key->GantiHari;
-
-							$Tanggal = date("y-m-d", strtotime($LoginDate.' -1 Days'));
-						}
-						else{
-							$data['Shift'] = $key->id;
-							$data['isGantiHari'] = $key->GantiHari;
-						}
-					}
-				}
-
-				$oWhere = array(
-					'TglAwal'		=> $Tanggal,
-					'TglAkhir'		=> $Tanggal,
-					'RecordOwnerID'	=> $oUser->row()->RecordOwnerID,
-					'NIK'			=> $oUser->row()->username
-				);
-
-				// foreach ($oLokasi->result() as $key) {
-				// 	if ($key->id == $oSecurity->row()->Shift) {
-				// 		$data['isGantiHari'] = $key->GantiHari;
-				// 	}
-				// }
-			}
-			$data['JadwalShift'] = $oLokasi->result();
 
 			$sess_data['userid']=$oUser->row()->id;
 			$sess_data['NamaUser'] = $oUser->row()->nama;
 			$sess_data['UserName'] = $oUser->row()->username;
-			$sess_data['RecordOwnerID'] = $oUser->row()->RecordOwnerID;
-			$sess_data['AreaUser'] = $oUser->row()->AreaUser;
 			$this->session->set_userdata($sess_data);
 		}
 
 
 		jump:
-		$this->ModelsExecuteMaster->WriteLog($RecordOwnerID,'Login', json_encode($data));
+		// $this->ModelsExecuteMaster->WriteLog($RecordOwnerID,'Login', json_encode($data));
 		echo json_encode($data);
 	}
 
