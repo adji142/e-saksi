@@ -96,6 +96,7 @@
               <div class="col-md-6 col-sm-6 ">
                 <input type="hidden" name="formtype" id="formtype" value="add">
                 <input type="hidden" name="id" id="id">
+                <input type="hidden" name="source" id="source" value="web">
                 <input type="text" name="NIK" id="NIK" required="" placeholder="NIK" class="form-control ">
               </div>
             </div>
@@ -408,7 +409,12 @@
       $.ajax({
         type    :'post',
         url     : '<?=base_url()?>C_Saksi/CRUD',
-        data    : me.serialize(),
+        // data    : me.serialize(),
+        data : new FormData(this),
+        processData:false,
+        contentType:false,
+        cache:false,
+        async:false,
         dataType: 'json',
         success : function (response) {
           if(response.success == true){
@@ -483,7 +489,8 @@
             $('#TPS').val(v.TPS).change();
             $('#NoTlp').val(v.NoTlp);
             $('#image_base64').val(v.Image);
-            $('#image_result').html("<img src ='"+v.Image+"' width = '50%'> ");
+            // $('#image_result').html("<img src ='"+v.Image+"' width = '50%'> ");
+            $('#image_result').html("<img src ='<?php echo base_url() ?>Assets/images/profile/"+v.Image+"' width = '50%'> ");
 
             $('#formtype').val("edit");
             $('#modal_').modal('show');

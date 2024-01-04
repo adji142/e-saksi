@@ -28,6 +28,7 @@
 					a.Alamat,
 					COALESCE(d.dis_name,'')		as Kecamatan,
 					COALESCE(e.subdis_name,'') as Kelurahan,
+					COALESCE(c.city_name,'') as Kota,
 					f.NamaTPS,
 					f.AlamatTPS,
 					a.NoTlp,
@@ -36,7 +37,7 @@
 					a.kecamatan_id,
 					a.kelurahan_id,
 					a.TPS,
-					a.Image
+					COALESCE(a.Image,'') AS Image
 				FROM saksi a
 				LEFT JOIN dem_provinsi b on a.prov_id = b.prov_id
 				LEFT JOIN dem_kota c on a.kota_id =c.city_id and b.prov_id = c.prov_id
@@ -100,6 +101,7 @@
 			$formtype = $this->input->post('formtype');
 
 			$oFindNIK = $this->ModelsExecuteMaster->FindData(array('NIK'=>$NIK),$this->table);
+			$source = $this->input->post('source');
 
 			if ($oFindNIK->num_rows() > 0 && $formtype == "add") {
 				$data['success'] = false;
@@ -107,70 +109,121 @@
 				goto jump;
 			}
 
-			$param = array(
-				'NIK' => $NIK,
-				'NoKTAB' => $NoKTAB,
-				'FullName' => $FullName,
-				'Alamat' => $Alamat,
-				'TanggalLahir' => $TanggalLahir,
-				'prov_id' => $prov_id,
-				'kota_id' => $kota_id,
-				'kecamatan_id' => $kecamatan_id,
-				'kelurahan_id' => $kelurahan_id,
-				'TPS' => $TPS,
-				'NoTlp' => $NoTlp,
-				'Image' => $Image,
-				'CreatedBy' => $CreatedBy,
-				'CreatedOn' => $CreatedOn,
+			// $extension = explode('/', mime_content_type($Image))[1];
+			$fileExt = "";
+			if ($source == "web") {
+				$fileExt = pathinfo($_FILES["Attachment"]["name"], PATHINFO_EXTENSION);
+			}
+			$baseDir = FCPATH.'Assets/images/profile/';
+			$config = array(
+				'upload_path' => $baseDir,
+				'allowed_types' => "gif|jpg|png|jpeg|pdf",
+				'overwrite' => TRUE,
+				'max_size' => "2048000", // Can be set to particular file size , here it is 2 MB(2048 Kb)
+				'file_name' => $NIK.'.'.$fileExt
 			);
+			try {
 
-			$errormessage = '';
-			if ($formtype == 'add') {
-				$rs = $this->ModelsExecuteMaster->ExecInsert($param,$this->table);
-				if ($rs) {
-					$data['success'] = true;
-					$data['message'] = "Data Berhasil Disimpan";
+				// file_put_contents($baseDir,base64_decode($Image));
+				$param = array();
+				if ($source == "web") {
+					$param = array(
+						'NIK' => $NIK,
+						'NoKTAB' => $NoKTAB,
+						'FullName' => $FullName,
+						'Alamat' => $Alamat,
+						'TanggalLahir' => $TanggalLahir,
+						'prov_id' => $prov_id,
+						'kota_id' => $kota_id,
+						'kecamatan_id' => $kecamatan_id,
+						'kelurahan_id' => $kelurahan_id,
+						'TPS' => $TPS,
+						'NoTlp' => $NoTlp,
+						'Image' => $NIK.'.'.$fileExt,
+						'CreatedBy' => $CreatedBy,
+						'CreatedOn' => $CreatedOn,
+					);
 				}
 				else{
-					$data['message'] = "Gagal Tambah data Saksi";
+					$param = array(
+						'NIK' => $NIK,
+						'NoKTAB' => $NoKTAB,
+						'FullName' => $FullName,
+						'Alamat' => $Alamat,
+						'TanggalLahir' => $TanggalLahir,
+						'prov_id' => $prov_id,
+						'kota_id' => $kota_id,
+						'kecamatan_id' => $kecamatan_id,
+						'kelurahan_id' => $kelurahan_id,
+						'TPS' => $TPS,
+						'NoTlp' => $NoTlp,
+						'CreatedBy' => $CreatedBy,
+						'CreatedOn' => $CreatedOn,
+					);
 				}
-			}
-			elseif ($formtype == 'edit') {
-				$oWhere = array(
-					'NIK' => $NIK
-				);
-				$rs = $this->ModelsExecuteMaster->ExecUpdate($param,$oWhere,$this->table);
-				if ($rs) {
-					$data['success'] = true;
-					$data['message'] = "Data Berhasil Disimpan";
-				}
-				else{
-					$data['message'] = "Gagal Edit data Saksi";
-				}
-			}
-			elseif ($formtype == 'delete') {
-				// $oCheckPoint = $this->ModelsExecuteMaster->FindData(array('LocationID'=>$id,'RecordOwnerID'=> $RecordOwnerID),'tcheckpoint');
 
-				// if ($oCheckPoint->num_rows() > 0) {
-				// 	$data['success'] = false;
-				// 	$data['message'] = "Data Lokasi Sudah Dipakai";
-				// 	goto jump;
-				// }
-				$oWhere = array(
-					'id' => $id
-				);
-				$rs = $this->ModelsExecuteMaster->DeleteData($oWhere,$this->table);
-				if ($rs) {
-					$data['success'] = true;
-					$data['message'] = "Data Berhasil Disimpan";
+				$errormessage = '';
+				if ($formtype == 'add') {
+					$rs = $this->ModelsExecuteMaster->ExecInsert($param,$this->table);
+					if ($rs) {
+						$data['success'] = true;
+						$data['message'] = "Data Berhasil Disimpan";
+					}
+					else{
+						$data['message'] = "Gagal Tambah data Saksi";
+					}
+				}
+				elseif ($formtype == 'edit') {
+					$oWhere = array(
+						'NIK' => $NIK
+					);
+					$rs = $this->ModelsExecuteMaster->ExecUpdate($param,$oWhere,$this->table);
+					if ($rs) {
+						$data['success'] = true;
+						$data['message'] = "Data Berhasil Disimpan";
+					}
+					else{
+						$data['message'] = "Gagal Edit data Saksi";
+					}
+				}
+				elseif ($formtype == 'delete') {
+					// $oCheckPoint = $this->ModelsExecuteMaster->FindData(array('LocationID'=>$id,'RecordOwnerID'=> $RecordOwnerID),'tcheckpoint');
+
+					// if ($oCheckPoint->num_rows() > 0) {
+					// 	$data['success'] = false;
+					// 	$data['message'] = "Data Lokasi Sudah Dipakai";
+					// 	goto jump;
+					// }
+					$oWhere = array(
+						'id' => $id
+					);
+					$rs = $this->ModelsExecuteMaster->DeleteData($oWhere,$this->table);
+					if ($rs) {
+						$data['success'] = true;
+						$data['message'] = "Data Berhasil Disimpan";
+					}
+					else{
+						$data['message'] = "Gagal Delete data Saksi";
+					}
 				}
 				else{
-					$data['message'] = "Gagal Delete data Saksi";
+					$data['message'] = "Invalid Form Type";
 				}
+
+			} catch (Exception $e) {
+				$data['message'] = $e->getMessage();
 			}
-			else{
-				$data['message'] = "Invalid Form Type";
+
+			if ($source == 'web') {
+				$this->load->library('upload', $config);
+
+				if (!$this->upload->do_upload('Attachment')) {
+					$data['message'] = $this->upload->display_errors();
+		        } else {
+		        	$data['message'] = $this->upload->data();
+		        }
 			}
+
 			jump:
 			echo json_encode($data);
 
